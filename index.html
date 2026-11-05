@@ -100,7 +100,7 @@
   .main-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:28px;align-items:start}
 
   table{width:100%;border-collapse:collapse;font-size:15px}
-  thead th{font-size:13px;font-weight:500;color:var(--muted);text-align:right;padding:0 10px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  thead th{font-size:13px;font-weight:500;color:var(--muted);text-align:right;padding:0 10px 10px;border-bottom:1px solid var(--line);line-height:1.3;vertical-align:bottom}
   thead th.l{text-align:left}
   tbody td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;vertical-align:middle}
   tbody td.l{text-align:left}
@@ -137,6 +137,14 @@
   footer{border-top:1px solid var(--line);margin-top:24px}
   footer .wrap{padding-top:22px;padding-bottom:36px;font-size:14px;color:var(--muted);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 
+  .rule-list{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;counter-reset:r}
+  .rule-list li{counter-increment:r;border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:var(--panel)}
+  .rule-list h3{font-family:var(--display);font-weight:700;font-size:22px;line-height:1.15;margin-bottom:6px;display:flex;gap:10px;align-items:baseline}
+  .rule-list h3::before{content:counter(r);font-weight:800;font-style:italic;color:var(--signal);font-size:24px}
+  .rule-list p{font-size:15px;color:var(--paper);line-height:1.5}
+  .rule-list b{color:var(--signal)}
+  @media (max-width:900px){.rule-list{grid-template-columns:1fr 1fr}}
+  @media (max-width:600px){.rule-list{grid-template-columns:1fr}}
   .empty{padding:28px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center}
 
   @media (max-width:900px){
@@ -215,7 +223,7 @@
     <section aria-labelledby="t-rank">
       <div class="head" style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap">
         <h2 id="t-rank">Ranking da equipe</h2>
-        <p style="color:var(--muted);font-size:15px">Setas comparam com a semana passada</p>
+        <p style="color:var(--muted);font-size:15px">Atualizado no fim de cada expediente. As setas comparam com a semana passada.</p>
       </div>
       <div id="board"></div>
     </section>
@@ -230,10 +238,25 @@
       <div class="box rules">
         <h3>Como pontuar</h3>
         <dl id="rules"></dl>
-        <p>Comentário copiado ou só com emoji não vale. Convite só conta com o print da notificação enviado ao Marketing.</p>
+        <p>As faixas de convites não somam: quem envia 30 no mês fica com 5 pontos. Posts novos saem na segunda e na quarta.</p>
       </div>
     </aside>
   </div>
+
+  <section class="section regras" aria-labelledby="t-regras">
+    <div class="head"><h2 id="t-regras">Regras do desafio</h2><p>Leia antes de começar. Dúvidas, fale com o Marketing.</p></div>
+    <ol class="rule-list">
+      <li><h3>Quem participa</h3><p>Todos os 26 colaboradores, incluindo líderes e administradores da página. A participação é voluntária. Os pontos do Marketing são conferidos pela gestora.</p></li>
+      <li><h3>Quando vale</h3><p>De 06/11 a 31/12. Contam as interações nos posts da página da MyTracking publicados a partir de 01/11.</p></li>
+      <li><h3>Posts novos e bônus</h3><p>Posts novos saem na <b>segunda e na quarta</b>, avisados no grupo de comunicados. Comentar no post do dia, entre 11h e 16h, vale +2.</p></li>
+      <li><h3>Interações válidas</h3><p>Uma curtida e um compartilhamento por post, por pessoa, e até 1 comentário com pontos por post. Comentário copiado, genérico ou só com emoji não pontua.</p></li>
+      <li><h3>Convites</h3><p>Enviar 10, 20 ou 30 convites no mês vale 2, 3 ou 5 pontos. As faixas não somam e param em 30 para todos. Cada convite aceito vale mais 5.</p></li>
+      <li><h3>Como comprovar</h3><p>Mande no <b>WhatsApp do Marketing</b> o print da tela de convites, com os créditos usados, e o print de cada convite aceito. Prints até o fim do expediente entram no ranking do dia.</p></li>
+      <li><h3>O que não vale</h3><p>Robôs ou automação, perfis falsos, combinar de seguir e deixar de seguir, ou pressionar alguém a seguir a página.</p></li>
+      <li><h3>Ranking e dúvidas</h3><p>Atualizado no fim de cada expediente. Desempate: mais convites aceitos, depois mais comentários. Dúvidas em até 2 dias úteis. A palavra final é da gestora.</p></li>
+      <li><h3>Prêmio</h3><p>Coletivo: se a página chegar a <b>5.300 seguidores até 31/12</b>, a equipe ganha a mesa de pingue-pongue nova, entregue em janeiro. O ranking serve para reconhecer, sem prêmio individual.</p></li>
+    </ol>
+  </section>
 </main>
 
 <footer>
@@ -261,8 +284,10 @@ const CONFIG = {
   inicio: "06/11/2026",
   checkpoints: [4900, 5000, 5100, 5200],
 
-  pontos: { curtida: 1, compartilhamento: 1, comentario: 2, convite: 5 },
-  bonusComentario: 2     // por comentário no post do dia, das 11h às 16h
+  pontos: { curtida: 1, compartilhamento: 1, comentario: 2, aceito: 5 },
+  bonusComentario: 2,    // por comentário no post do dia (segunda e quarta), das 11h às 16h
+  // convites enviados no mês: ao chegar em cada faixa, a pessoa fica com os pontos da faixa (não soma)
+  faixasEnviados: [ [10, 2], [20, 3], [30, 5] ]
 };
 
 /* ---------- dados de exemplo (usados quando os links estão vazios) ---------- */
@@ -288,7 +313,9 @@ function demoData(){
     if(co) rows.push({data:dias[i],colaborador:n,area:a,acao:"compartilhamento",quantidade:co,bonus:"não"});
     if(cm-cb>0) rows.push({data:dias[i],colaborador:n,area:a,acao:"comentario",quantidade:cm-cb,bonus:"não"});
     if(cb) rows.push({data:dias[i],colaborador:n,area:a,acao:"comentario",quantidade:cb,bonus:"sim"});
-    if(cv) rows.push({data:dias[i],colaborador:n,area:a,acao:"convite",quantidade:cv,bonus:"não"});
+    if(cv) rows.push({data:dias[i],colaborador:n,area:a,acao:"convite aceito",quantidade:cv,bonus:"não"});
+    const en = [10,10,10][i] - (cv<2 ? 5 : 0);
+    if(en>0) rows.push({data:dias[i],colaborador:n,area:a,acao:"convites enviados",quantidade:en,bonus:"não"});
   }));
   const seg = [
     {data:"30/10/2026",seguidores:4734},{data:"09/11/2026",seguidores:4790},
@@ -345,7 +372,8 @@ async function getCSV(url, aba){
 }
 function actionOf(s){
   const a=norm(s);
-  if(a.includes("convit")) return "convite";
+  if(a.includes("envi")) return "enviados";
+  if(a.includes("aceit")||a.includes("convit")) return "aceito";
   if(a.includes("coment")) return "comentario";
   if(a.includes("compart")) return "compartilhamento";
   if(a.includes("curt")||a.includes("reac")) return "curtida";
@@ -364,21 +392,32 @@ function compute(lanc, seg){
   const last = items.reduce((m,x)=> x.d>m?x.d:m, new Date(0));
   const weekStart = items.length ? mondayOf(last) : null;
 
+  const faixa = n => CONFIG.faixasEnviados.reduce((m,[lim,pts]) => n>=lim ? Math.max(m,pts) : m, 0);
+  const enviadosMes = new Map();   // pessoa + mês -> convites enviados até agora
   const ppl = new Map();
-  for(const x of items){
-    const p = ppl.get(x.nome) || {nome:x.nome, area:x.area, total:0, semana:0, convites:0, comentarios:0, curtidas:0};
+  for(const x of [...items].sort((a,b)=>a.d-b.d)){
+    const p = ppl.get(x.nome) || {nome:x.nome, area:x.area, total:0, semana:0, convites:0, enviados:0, comentarios:0, curtidas:0};
     p.area = x.area;
-    let pts = (CONFIG.pontos[x.acao]||0) * x.q;
-    if(x.acao==="comentario" && x.bonus) pts += CONFIG.bonusComentario * x.q;
+    let pts = 0;
+    if(x.acao==="enviados"){
+      const k = x.nome+"|"+x.d.getFullYear()+"-"+x.d.getMonth();
+      const antes = enviadosMes.get(k)||0, depois = antes + x.q;
+      enviadosMes.set(k, depois);
+      pts = faixa(depois) - faixa(antes);
+      p.enviados += x.q;
+    } else {
+      pts = (CONFIG.pontos[x.acao]||0) * x.q;
+      if(x.acao==="comentario" && x.bonus) pts += CONFIG.bonusComentario * x.q;
+      if(x.acao==="aceito") p.convites += x.q;
+      else if(x.acao==="comentario") p.comentarios += x.q;
+      else p.curtidas += x.q;
+    }
     p.total += pts;
     if(weekStart && x.d >= weekStart) p.semana += pts;
-    if(x.acao==="convite") p.convites += x.q;
-    else if(x.acao==="comentario") p.comentarios += x.q;
-    else p.curtidas += x.q;
     ppl.set(x.nome,p);
   }
   const list=[...ppl.values()];
-  const byTotal=(a,b)=> b.total-a.total || b.convites-a.convites || a.nome.localeCompare(b.nome,"pt-BR");
+  const byTotal=(a,b)=> b.total-a.total || b.convites-a.convites || b.comentarios-a.comentarios || a.nome.localeCompare(b.nome,"pt-BR");
   list.sort(byTotal); list.forEach((p,i)=>p.rank=i+1);
   const prev=[...list].filter(p=>p.total-p.semana>0).sort((a,b)=>(b.total-b.semana)-(a.total-a.semana) || b.convites-a.convites);
   prev.forEach((p,i)=>p.prevRank=i+1);
@@ -463,7 +502,7 @@ function render(data, isDemo){
     board.innerHTML=`<table>
       <thead><tr>
         <th class="l" scope="col">#</th><th class="l" scope="col"><span class="sr">Variação</span></th><th class="l" scope="col">Colaborador</th>
-        <th class="det" scope="col">Convites</th><th class="det" scope="col">Comentários</th><th class="det" scope="col">Curtidas e compart.</th>
+        <th class="det" scope="col">Convites<br>enviados / aceitos</th><th class="det" scope="col">Comentários</th><th class="det" scope="col">Curtidas e<br>compart.</th>
         <th scope="col">Semana</th><th scope="col">Total</th>
       </tr></thead><tbody>${list.map(p=>{
         let mv='<span class="mv new">novo</span>';
@@ -472,7 +511,7 @@ function render(data, isDemo){
         return `<tr class="${p.rank===1?"lead":""}">
           <td class="l pos">${p.rank}</td><td class="l">${mv}</td>
           <td class="l person"><b>${esc(p.nome)}</b><span>${esc(p.area)}</span></td>
-          <td class="det">${p.convites}</td><td class="det">${p.comentarios}</td><td class="det">${p.curtidas}</td>
+          <td class="det">${p.enviados} / <b>${p.convites}</b></td><td class="det">${p.comentarios}</td><td class="det">${p.curtidas}</td>
           <td class="week">${p.semana?"+"+p.semana:"0"}</td>
           <td><span class="total">${fmt(p.total)}</span><span class="meter"><i style="width:${p.total/max*100}%"></i></span></td>
         </tr>`;}).join("")}</tbody></table>`;
@@ -498,7 +537,8 @@ function render(data, isDemo){
     <dt>Curtir ou compartilhar</dt><dd>${P.curtida}</dd>
     <dt>Comentar</dt><dd>${P.comentario}</dd>
     <dt>Comentar no post do dia, 11h às 16h</dt><dd>+${CONFIG.bonusComentario}</dd>
-    <dt>Convite aceito</dt><dd>${P.convite}</dd>`;
+    ${CONFIG.faixasEnviados.map(([l,pt])=>`<dt>Enviar ${l} convites no mês</dt><dd>${pt}</dd>`).join("")}
+    <dt>Cada convite aceito</dt><dd>${P.aceito}</dd>`;
 }
 
 /* ---------- início ---------- */
