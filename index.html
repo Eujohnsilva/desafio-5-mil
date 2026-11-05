@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Desafio 5 Mil · MyTracking</title>
+<meta name="description" content="Placar e ranking da equipe MyTracking rumo aos 5.000 seguidores no LinkedIn.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;0,800;1,700;1,800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --route:#0E1A33;      /* fundo: azul-noite da marca */
+    --panel:#15264A;      /* superfícies */
+    --line:#263C66;       /* traços e divisões */
+    --blue:#3B7BE0;       /* azul das setas da logo */
+    --blue-soft:#8DB4FF;  /* azul claro para subidas */
+    --signal:#FF8A3D;     /* laranja de sinalização: liderança e destaque */
+    --paper:#EEF2F8;      /* texto principal */
+    --muted:#93A3BF;      /* texto secundário */
+    --silver:#C9D4E6;
+    --bronze:#D9A27A;
+    --display:'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+    --body:'DM Sans', Arial, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--route)}
+  body{background:var(--route);color:var(--paper);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:var(--blue-soft)}
+  :focus-visible{outline:3px solid var(--signal);outline-offset:3px;border-radius:4px}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+
+  /* topo */
+  .top{border-bottom:1px solid var(--line)}
+  .top .wrap{display:flex;align-items:center;gap:16px;min-height:68px;flex-wrap:wrap;padding-top:10px;padding-bottom:10px}
+  .top img{height:24px;width:auto;display:block}
+  .top .name{font-family:var(--display);font-weight:800;font-style:italic;font-size:26px;letter-spacing:.5px;line-height:1;padding-left:16px;border-left:1px solid var(--line)}
+  .top .upd{margin-left:auto;font-size:14px;color:var(--muted)}
+  .demo{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;background:rgba(255,138,61,.15);color:var(--signal);font-size:13px;font-weight:700}
+
+  /* faixa de aviso */
+  .notice{margin-top:20px;padding:14px 18px;border-radius:10px;background:rgba(255,138,61,.12);border:1px solid rgba(255,138,61,.4);color:var(--paper);font-size:15px}
+  .notice[hidden]{display:none}
+
+  /* hero: a rota */
+  .hero{padding:44px 0 36px}
+  .status{font-size:15px;color:var(--blue-soft);font-weight:700;display:flex;align-items:center;gap:8px}
+  .status::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 4px rgba(255,138,61,.2)}
+  .hero h1{font-family:var(--display);font-weight:800;font-style:italic;font-size:clamp(46px,8vw,92px);line-height:.95;letter-spacing:-.5px;margin-top:10px;max-width:16ch}
+  .hero h1 .num{color:var(--signal)}
+
+  .route{position:relative;margin:56px 6px 0;height:64px}
+  .track{position:absolute;left:0;right:0;top:40px;height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,var(--line) 0 14px,transparent 14px 24px)}
+  .done{position:absolute;left:0;top:40px;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--blue-soft));width:0;transition:width 1.6s cubic-bezier(.2,.7,.2,1)}
+  .truck{position:absolute;top:0;left:0;transform:translateX(-50%);transition:left 1.6s cubic-bezier(.2,.7,.2,1)}
+  .truck svg{display:block;width:58px;height:34px}
+  .stop{position:absolute;top:30px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+  .stop i{width:14px;height:14px;border-radius:50%;background:var(--route);border:3px solid var(--line);display:block;margin-top:3px}
+  .stop.passed i{border-color:var(--blue-soft);background:var(--blue-soft)}
+  .stop span{margin-top:8px;font-size:13px;color:var(--muted);white-space:nowrap}
+  .stop.end i{width:22px;height:22px;margin-top:-1px;border-color:var(--signal)}
+  .stop.end span{color:var(--signal);font-weight:700}
+  .stop.mesa i{width:18px;height:18px;margin-top:1px;border-color:var(--signal)}
+  .stop.mesa.passed i{background:var(--signal)}
+  .stop.mesa span{color:var(--signal);font-weight:700}
+  .route-ends{display:flex;justify-content:space-between;margin-top:30px;font-size:13px;color:var(--muted)}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:34px}
+  .stats div{background:var(--route);padding:16px 18px}
+  .stats dt{font-size:14px;color:var(--muted)}
+  .stats dd{font-family:var(--display);font-weight:700;font-size:34px;line-height:1.1;margin-top:2px}
+  .stats dd small{font-family:var(--body);font-size:14px;font-weight:500;color:var(--muted)}
+
+  /* pódio */
+  h2{font-family:var(--display);font-weight:800;font-style:italic;font-size:34px;line-height:1.1;letter-spacing:.2px}
+  .section{padding:36px 0}
+  .section > .head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+  .section > .head p{color:var(--muted);font-size:15px}
+
+  .podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;align-items:end;gap:14px}
+  .place{display:flex;flex-direction:column;align-items:center;text-align:center}
+  .avatar{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:30px;background:var(--panel);border:3px solid var(--silver);color:var(--paper)}
+  .p1 .avatar{width:92px;height:92px;font-size:38px;border-color:var(--signal);box-shadow:0 0 0 6px rgba(255,138,61,.15)}
+  .p3 .avatar{border-color:var(--bronze)}
+  .place .who{margin-top:10px;font-weight:700;font-size:17px;line-height:1.25}
+  .place .area{font-size:14px;color:var(--muted)}
+  .block{width:100%;margin-top:14px;border-radius:10px 10px 0 0;background:var(--panel);border:1px solid var(--line);border-bottom:none;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:14px}
+  .block .pts{font-family:var(--display);font-weight:800;font-style:italic;font-size:44px;line-height:1}
+  .block .lbl{font-size:13px;color:var(--muted)}
+  .block .rank{font-family:var(--display);font-weight:800;font-size:72px;line-height:1;color:var(--line);margin-top:6px}
+  .p1 .block{height:250px;background:linear-gradient(180deg,rgba(255,138,61,.22),var(--panel) 70%);border-color:rgba(255,138,61,.5)}
+  .p1 .block .pts{color:var(--signal)}
+  .p2 .block{height:200px}
+  .p3 .block{height:170px}
+  .podium-base{height:6px;background:var(--line);border-radius:0 0 6px 6px}
+
+  /* grade principal */
+  .main-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:28px;align-items:start}
+
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  thead th{font-size:13px;font-weight:500;color:var(--muted);text-align:right;padding:0 10px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+  thead th.l{text-align:left}
+  tbody td{padding:12px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;vertical-align:middle}
+  tbody td.l{text-align:left}
+  .pos{font-family:var(--display);font-weight:800;font-size:24px;width:40px;text-align:left}
+  .mv{font-size:13px;font-weight:700;width:52px;text-align:left;white-space:nowrap}
+  .mv.up{color:var(--blue-soft)} .mv.down{color:var(--muted)} .mv.same{color:var(--line)} .mv.new{color:var(--signal)}
+  .person b{display:block;font-weight:700}
+  .person span{font-size:13px;color:var(--muted)}
+  .week{color:var(--blue-soft);font-weight:700}
+  .total{font-family:var(--display);font-weight:800;font-size:24px}
+  .meter{display:block;height:4px;border-radius:2px;background:var(--line);margin-top:4px;overflow:hidden}
+  .meter i{display:block;height:100%;background:var(--blue)}
+  tr.lead .total{color:var(--signal)}
+  tr.lead .meter i{background:var(--signal)}
+
+  /* coluna lateral */
+  .side{display:flex;flex-direction:column;gap:22px}
+  .box{border:1px solid var(--line);border-radius:12px;padding:18px 20px;background:var(--panel)}
+  .box h3{font-family:var(--display);font-weight:700;font-size:24px;line-height:1.15;margin-bottom:10px}
+  .spot{border-color:rgba(255,138,61,.5);background:linear-gradient(160deg,rgba(255,138,61,.16),var(--panel) 60%)}
+  .spot .big{font-family:var(--display);font-weight:800;font-style:italic;font-size:30px;line-height:1.1;color:var(--signal)}
+  .spot p{font-size:15px;margin-top:6px}
+  .areas li{list-style:none;margin-top:12px}
+  .areas .row{display:flex;justify-content:space-between;font-size:15px}
+  .areas .row b{font-family:var(--display);font-size:20px}
+  .areas .bar{height:8px;border-radius:4px;background:var(--line);margin-top:5px;overflow:hidden}
+  .areas .bar i{display:block;height:100%;background:var(--blue-soft)}
+  .areas li:first-child .bar i{background:var(--signal)}
+  .areas small{font-size:13px;color:var(--muted)}
+  .rules dl{display:grid;grid-template-columns:1fr auto;gap:8px 12px;font-size:15px}
+  .rules dd{font-family:var(--display);font-weight:700;font-size:20px;text-align:right;color:var(--blue-soft)}
+  .rules p{font-size:13px;color:var(--muted);margin-top:12px}
+
+  footer{border-top:1px solid var(--line);margin-top:24px}
+  footer .wrap{padding-top:22px;padding-bottom:36px;font-size:14px;color:var(--muted);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+  .empty{padding:28px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center}
+
+  @media (max-width:900px){
+    .main-grid{grid-template-columns:1fr}
+  }
+  @media (max-width:720px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .det{display:none}
+    .podium{gap:8px}
+    .avatar{width:56px;height:56px;font-size:24px}
+    .p1 .avatar{width:70px;height:70px;font-size:30px}
+    .block .pts{font-size:34px}
+    .block .rank{font-size:44px}
+    .p1 .block{height:190px}.p2 .block{height:155px}.p3 .block{height:135px}
+    .place .who{font-size:15px}
+    .stop span{font-size:12px}
+    .stop.mid span{display:none}
+    .top .upd{margin-left:0;width:100%}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .done,.truck{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <img src="logo-mytracking.png" alt="MyTracking">
+    <span class="name">Desafio 5 Mil</span>
+    <span class="upd" id="upd">Carregando o placar…</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="notice" id="notice" hidden></p>
+
+  <section class="hero" aria-labelledby="titulo">
+    <p class="status" id="status">Em rota para 5.000</p>
+    <h1 id="titulo"><span class="num" id="faltam">—</span> seguidores até a mesa nova</h1>
+
+    <div class="route" id="route" role="img" aria-label="Progresso da página até 5.000 seguidores">
+      <div class="track"></div>
+      <div class="done" id="done"></div>
+      <div id="stops"></div>
+      <div class="truck" id="truck" aria-hidden="true">
+        <svg viewBox="0 0 58 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="3" width="34" height="21" rx="3" fill="#FF8A3D"/>
+          <path d="M35 9h11l8 8v7H35z" fill="#FFB27F"/>
+          <path d="M38 11h7l5 5h-12z" fill="#0E1A33" opacity=".55"/>
+          <circle cx="12" cy="27" r="5" fill="#0E1A33" stroke="#EEF2F8" stroke-width="2.5"/>
+          <circle cx="44" cy="27" r="5" fill="#0E1A33" stroke="#EEF2F8" stroke-width="2.5"/>
+          <path d="M7 10h9M7 15h14" stroke="#0E1A33" stroke-width="2.5" stroke-linecap="round" opacity=".5"/>
+        </svg>
+      </div>
+    </div>
+    <div class="route-ends"><span id="startLbl">Saída</span><span id="endLbl">Destino</span></div>
+
+    <dl class="stats">
+      <div><dt>Seguidores hoje</dt><dd id="atual">—</dd></div>
+      <div><dt>Desde a última atualização</dt><dd id="delta">—</dd></div>
+      <div><dt>Dias até o prazo</dt><dd id="dias">—</dd></div>
+      <div><dt>Ritmo até a meta final</dt><dd id="ritmo">—</dd></div>
+    </dl>
+  </section>
+
+  <section class="section" aria-labelledby="t-podio">
+    <div class="head"><h2 id="t-podio">Pódio</h2><p id="podioNote">Pontos somados desde 06/11</p></div>
+    <div id="podium"></div>
+  </section>
+
+  <div class="main-grid section">
+    <section aria-labelledby="t-rank">
+      <div class="head" style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+        <h2 id="t-rank">Ranking da equipe</h2>
+        <p style="color:var(--muted);font-size:15px">Setas comparam com a semana passada</p>
+      </div>
+      <div id="board"></div>
+    </section>
+
+    <aside class="side">
+      <div class="box spot" id="spot"></div>
+      <div class="box areas">
+        <h3>Disputa entre áreas</h3>
+        <p style="font-size:14px;color:var(--muted)">Média de pontos por pessoa, para área pequena competir de igual para igual.</p>
+        <ul id="areas"></ul>
+      </div>
+      <div class="box rules">
+        <h3>Como pontuar</h3>
+        <dl id="rules"></dl>
+        <p>Comentário copiado ou só com emoji não vale. Convite só conta com o print da notificação enviado ao Marketing.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Prêmio da equipe: mesa de pingue-pongue nova ao chegar a 5.000. Meta final: 5.300 até 31/12.</span>
+    <span>Dúvidas sobre pontos: fale com o Marketing.</span>
+  </div>
+</footer>
+
+<script>
+/* =========================================================
+   CONFIGURAÇÃO — o Marketing só precisa mexer aqui
+   ========================================================= */
+const CONFIG = {
+  // Links da planilha publicada na web como CSV (Arquivo > Compartilhar > Publicar na Web).
+  // Deixe vazio ("") para ver o site com os dados de exemplo.
+  csvLancamentos: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSP2LjXv7kNZqbwxBPDwx12oh2RwyY3B24eEshcnNpcQm3ZmDdkqGoM6NvHZRiOf-8xvA9Moa9W-ANr/pub?gid=0&single=true&output=csv",
+  csvSeguidores: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSP2LjXv7kNZqbwxBPDwx12oh2RwyY3B24eEshcnNpcQm3ZmDdkqGoM6NvHZRiOf-8xvA9Moa9W-ANr/pub?gid=915647704&single=true&output=csv",
+
+  base: 4734,            // seguidores no início do desafio
+  baseData: "30/10/2026",
+  meta: 5300,            // meta final da página
+  marcoMesa: 5000,       // ao chegar aqui, a mesa de pingue-pongue é liberada
+  prazo: "31/12/2026",
+  inicio: "06/11/2026",
+  checkpoints: [4900, 5150],
+
+  pontos: { curtida: 1, compartilhamento: 1, comentario: 2, convite: 5 },
+  bonusComentario: 2     // por comentário no post do dia, das 11h às 16h
+};
+
+/* ---------- dados de exemplo (usados quando os links estão vazios) ---------- */
+function demoData(){
+  // [nome, área, [ [curtidas, compart., comentários, comentários com bônus, convites] por semana ] ]
+  const P = [
+    ["Ana Paula","Comercial",[[6,2,4,2,3],[7,1,5,3,4],[8,2,6,3,2]]],
+    ["Bruno","CS",[[8,3,6,3,2],[9,2,7,4,2],[7,2,6,3,2]]],
+    ["Carla","Implantação",[[5,1,3,1,2],[6,2,5,2,1],[8,1,6,4,3]]],
+    ["Diego","Liderança",[[4,2,3,1,2],[5,1,4,2,1],[4,1,3,1,1]]],
+    ["Eduarda","Desenvolvimento",[[7,1,3,1,0],[7,2,3,2,1],[9,2,5,3,1]]],
+    ["Felipe","Comercial",[[3,1,2,1,1],[4,0,3,1,2],[3,1,2,0,1]]],
+    ["Gabriela","Financeiro",[[5,1,2,1,0],[6,1,3,1,0],[5,2,2,1,1]]],
+    ["Henrique","Desenvolvimento",[[2,0,1,0,0],[3,1,2,1,1],[6,2,4,3,2]]],
+    ["Isabela","CS",[[4,1,2,1,1],[3,1,2,1,0],[4,1,3,1,0]]],
+    ["João Pedro","Implantação",[[2,0,1,0,0],[2,1,1,1,0],[3,0,2,1,1]]]
+  ];
+  const dias = ["08/11/2026","15/11/2026","22/11/2026"];
+  const rows = [];
+  P.forEach(([n,a,ws]) => ws.forEach((w,i) => {
+    const [cu,co,cm,cb,cv] = w;
+    if(cu) rows.push({data:dias[i],colaborador:n,area:a,acao:"curtida",quantidade:cu,bonus:"não"});
+    if(co) rows.push({data:dias[i],colaborador:n,area:a,acao:"compartilhamento",quantidade:co,bonus:"não"});
+    if(cm-cb>0) rows.push({data:dias[i],colaborador:n,area:a,acao:"comentario",quantidade:cm-cb,bonus:"não"});
+    if(cb) rows.push({data:dias[i],colaborador:n,area:a,acao:"comentario",quantidade:cb,bonus:"sim"});
+    if(cv) rows.push({data:dias[i],colaborador:n,area:a,acao:"convite",quantidade:cv,bonus:"não"});
+  }));
+  const seg = [
+    {data:"30/10/2026",seguidores:4734},{data:"09/11/2026",seguidores:4790},
+    {data:"16/11/2026",seguidores:4851},{data:"23/11/2026",seguidores:4926}
+  ];
+  return {lanc:rows, seg};
+}
+
+/* ---------- utilidades ---------- */
+const norm = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = n => Number(n).toLocaleString("pt-BR");
+function num(s){ if(typeof s==="number") return s; const t=String(s??"").trim().replace(/\./g,"").replace(",","."); const n=Number(t); return isFinite(n)?n:0; }
+function toDate(s){
+  const t=String(s??"").trim(); let m;
+  if((m=t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/))){ const y=m[3].length===2?2000+ +m[3]:+m[3]; return new Date(y,+m[2]-1,+m[1]); }
+  if((m=t.match(/^(\d{4})-(\d{2})-(\d{2})/))) return new Date(+m[1],+m[2]-1,+m[3]);
+  return null;
+}
+const dm = d => d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
+function mondayOf(d){ const x=new Date(d); const k=(x.getDay()+6)%7; x.setDate(x.getDate()-k); x.setHours(0,0,0,0); return x; }
+
+function parseCSV(text){
+  const rows=[]; let row=[], f="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(f); f=""; }
+    else if(c==='\n'){ row.push(f); rows.push(row); row=[]; f=""; }
+    else if(c!=='\r') f+=c;
+  }
+  if(f!==""||row.length){ row.push(f); rows.push(row); }
+  let clean=rows.filter(r=>r.some(x=>x.trim()!==""));
+  if(!clean.length) return [];
+  // Títulos digitados numa célula só ("data, colaborador, ..."): separa pela vírgula
+  if(clean[0].filter(x=>x.trim()!=="").length===1 && /[,;]/.test(clean[0][0])){
+    clean = clean.map(r => r.length===1 || r.slice(1).every(x=>x.trim()==="") ? r[0].split(/[,;]/) : r);
+  }
+  const head=clean[0].map(norm);
+  return clean.slice(1).map(r=>Object.fromEntries(head.map((h,i)=>[h,r[i]??""])));
+}
+async function getCSV(url, aba){
+  const fail = motivo => { const e=new Error(motivo); e.aba=aba; throw e; };
+  if(/\/edit|pubhtml/.test(url) || !/output=csv/.test(url))
+    fail(`O link da aba ${aba} não é o link de CSV. Em Arquivo › Compartilhar › Publicar na Web, escolha a aba ${aba} e o formato .csv, e use o link que termina em output=csv.`);
+  let r;
+  try{ r = await fetch(url,{cache:"no-store"}); }
+  catch(_){ fail(`O site não conseguiu abrir o link da aba ${aba}. Confira se a planilha está publicada na web e se o link foi copiado inteiro.`); }
+  if(!r.ok) fail(`O link da aba ${aba} respondeu com erro (${r.status}). Confira se a publicação na web continua ativa.`);
+  const text = await r.text();
+  if(/^\s*</.test(text)) fail(`O link da aba ${aba} devolveu uma página, não uma tabela. Publique a aba no formato .csv.`);
+  return parseCSV(text);
+}
+function actionOf(s){
+  const a=norm(s);
+  if(a.includes("convit")) return "convite";
+  if(a.includes("coment")) return "comentario";
+  if(a.includes("compart")) return "compartilhamento";
+  if(a.includes("curt")||a.includes("reac")) return "curtida";
+  return null;
+}
+const yes = s => ["sim","s","x","1","true","verdadeiro"].includes(norm(s));
+const initials = n => n.split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join("").toUpperCase();
+
+/* ---------- cálculo ---------- */
+function compute(lanc, seg){
+  const items = lanc.map(r=>({
+    d: toDate(r.data), nome: String(r.colaborador??"").trim(), area: String(r.area??"").trim() || "Sem área",
+    acao: actionOf(r.acao), q: Math.max(0, num(r.quantidade) || 1), bonus: yes(r.bonus)
+  })).filter(x=>x.d && x.nome && x.acao);
+
+  const last = items.reduce((m,x)=> x.d>m?x.d:m, new Date(0));
+  const weekStart = items.length ? mondayOf(last) : null;
+
+  const ppl = new Map();
+  for(const x of items){
+    const p = ppl.get(x.nome) || {nome:x.nome, area:x.area, total:0, semana:0, convites:0, comentarios:0, curtidas:0};
+    p.area = x.area;
+    let pts = (CONFIG.pontos[x.acao]||0) * x.q;
+    if(x.acao==="comentario" && x.bonus) pts += CONFIG.bonusComentario * x.q;
+    p.total += pts;
+    if(weekStart && x.d >= weekStart) p.semana += pts;
+    if(x.acao==="convite") p.convites += x.q;
+    else if(x.acao==="comentario") p.comentarios += x.q;
+    else p.curtidas += x.q;
+    ppl.set(x.nome,p);
+  }
+  const list=[...ppl.values()];
+  const byTotal=(a,b)=> b.total-a.total || b.convites-a.convites || a.nome.localeCompare(b.nome,"pt-BR");
+  list.sort(byTotal); list.forEach((p,i)=>p.rank=i+1);
+  const prev=[...list].filter(p=>p.total-p.semana>0).sort((a,b)=>(b.total-b.semana)-(a.total-a.semana) || b.convites-a.convites);
+  prev.forEach((p,i)=>p.prevRank=i+1);
+
+  const segs = seg.map(r=>({d:toDate(r.data), v:num(r.seguidores)})).filter(s=>s.d && s.v>0).sort((a,b)=>a.d-b.d);
+  const atual = segs.length ? segs[segs.length-1] : {d:toDate(CONFIG.baseData), v:CONFIG.base};
+  const anterior = segs.length>1 ? segs[segs.length-2] : null;
+
+  const areas=new Map();
+  for(const p of list){ const a=areas.get(p.area)||{area:p.area,soma:0,n:0}; a.soma+=p.total; a.n++; areas.set(p.area,a); }
+  const areaList=[...areas.values()].map(a=>({...a, media:a.soma/a.n})).sort((a,b)=>b.media-a.media);
+
+  const upd = [last, atual.d].filter(Boolean).reduce((m,d)=> d>m?d:m, new Date(0));
+  return {list, areaList, atual, anterior, weekStart, upd};
+}
+
+/* ---------- desenho ---------- */
+function render(data, isDemo){
+  const {list, areaList, atual, anterior, upd} = data;
+  const meta=CONFIG.meta, base=CONFIG.base;
+  const falta=Math.max(0, meta-atual.v);
+  const mesa=CONFIG.marcoMesa, faltaMesa=Math.max(0, mesa-atual.v);
+
+  document.getElementById("upd").innerHTML =
+    (upd && upd.getTime()>0 ? "Atualizado em " + upd.toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"2-digit"}) : "") +
+    (isDemo ? '<span class="demo">dados de exemplo</span>' : "");
+
+  // título e rota
+  const titulo=document.getElementById("titulo"), status=document.getElementById("status");
+  if(falta===0){
+    status.textContent="Entregue";
+    titulo.innerHTML='Chegamos a <span class="num">'+fmt(meta)+'</span>. Que time!';
+  } else if(faltaMesa>0){
+    status.textContent=`Próxima parada: mesa nova em ${fmt(mesa)}. Meta final: ${fmt(meta)}`;
+    document.getElementById("faltam").textContent=fmt(faltaMesa);
+  } else {
+    status.textContent="Mesa garantida! Agora, rumo à meta final";
+    titulo.innerHTML=`<span class="num">${fmt(falta)}</span> seguidores até ${fmt(meta)}`;
+  }
+  const pct = Math.min(100, Math.max(0, (atual.v-base)/(meta-base)*100));
+  const stops=document.getElementById("stops");
+  stops.innerHTML = CONFIG.checkpoints.map(c=>{
+    const x=(c-base)/(meta-base)*100;
+    return `<div class="stop mid ${atual.v>=c?"passed":""}" style="left:${x}%"><i></i><span>${fmt(c)}</span></div>`;
+  }).join("") + `<div class="stop mesa ${atual.v>=mesa?"passed":""}" style="left:${(mesa-base)/(meta-base)*100}%"><i></i><span>Mesa: ${fmt(mesa)}</span></div>` + `<div class="stop end ${falta===0?"passed":""}" style="left:100%"><i></i><span>${fmt(meta)}</span></div>`;
+  document.getElementById("startLbl").textContent=`Saída: ${fmt(base)} em ${CONFIG.baseData.slice(0,5)}`;
+  document.getElementById("endLbl").textContent=`Prazo: ${CONFIG.prazo.slice(0,5)}`;
+  document.getElementById("route").setAttribute("aria-label",`${fmt(atual.v)} de ${fmt(meta)} seguidores, ${Math.round(pct)}% do caminho desde ${fmt(base)}`);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    document.getElementById("done").style.width=pct+"%";
+    document.getElementById("truck").style.left=pct+"%";
+  }));
+
+  document.getElementById("atual").textContent=fmt(atual.v);
+  document.getElementById("delta").innerHTML = anterior ? `${atual.v-anterior.v>=0?"+":""}${fmt(atual.v-anterior.v)} <small>desde ${dm(anterior.d)}</small>` : "—";
+  const hoje=new Date(); hoje.setHours(0,0,0,0);
+  const prazo=toDate(CONFIG.prazo);
+  const dias=Math.max(0, Math.round((prazo-hoje)/864e5));
+  document.getElementById("dias").textContent = dias;
+  document.getElementById("ritmo").innerHTML = falta===0 ? "Meta batida" : (dias>0 ? `${fmt(Math.ceil(falta/Math.max(1,dias/7)))} <small>por semana</small>` : "Prazo encerrado");
+
+  // pódio
+  const pod=document.getElementById("podium");
+  if(!list.length){
+    pod.innerHTML='<p class="empty">O pódio aparece assim que o Marketing lançar os primeiros pontos.</p>';
+  } else {
+    const order=[list[1],list[0],list[2]];
+    const cls=["p2","p1","p3"];
+    pod.innerHTML='<div class="podium">'+order.map((p,i)=> p ? `
+      <div class="place ${cls[i]}">
+        <div class="avatar" aria-hidden="true">${esc(initials(p.nome))}</div>
+        <div class="who">${esc(p.nome)}</div>
+        <div class="area">${esc(p.area)}</div>
+        <div class="block"><span class="pts">${fmt(p.total)}</span><span class="lbl">pontos</span><span class="rank" aria-label="${p.rank}º lugar">${p.rank}º</span></div>
+      </div>` : '<div></div>').join("")+'</div><div class="podium-base"></div>';
+  }
+
+  // tabela
+  const board=document.getElementById("board");
+  if(!list.length){
+    board.innerHTML='<p class="empty">Ainda não há pontos lançados. O primeiro comentário já coloca você no ranking.</p>';
+  } else {
+    const max=list[0].total||1;
+    board.innerHTML=`<table>
+      <thead><tr>
+        <th class="l" scope="col">#</th><th class="l" scope="col"><span class="sr">Variação</span></th><th class="l" scope="col">Colaborador</th>
+        <th class="det" scope="col">Convites</th><th class="det" scope="col">Comentários</th><th class="det" scope="col">Curtidas e compart.</th>
+        <th scope="col">Semana</th><th scope="col">Total</th>
+      </tr></thead><tbody>${list.map(p=>{
+        let mv='<span class="mv new">novo</span>';
+        if(p.prevRank){ const d=p.prevRank-p.rank;
+          mv = d>0?`<span class="mv up" title="Subiu ${d}">▲ ${d}</span>`: d<0?`<span class="mv down" title="Caiu ${-d}">▼ ${-d}</span>`:'<span class="mv same" title="Manteve">—</span>'; }
+        return `<tr class="${p.rank===1?"lead":""}">
+          <td class="l pos">${p.rank}</td><td class="l">${mv}</td>
+          <td class="l person"><b>${esc(p.nome)}</b><span>${esc(p.area)}</span></td>
+          <td class="det">${p.convites}</td><td class="det">${p.comentarios}</td><td class="det">${p.curtidas}</td>
+          <td class="week">${p.semana?"+"+p.semana:"0"}</td>
+          <td><span class="total">${fmt(p.total)}</span><span class="meter"><i style="width:${p.total/max*100}%"></i></span></td>
+        </tr>`;}).join("")}</tbody></table>`;
+  }
+
+  // destaque da semana
+  const spot=document.getElementById("spot");
+  const best=[...list].sort((a,b)=>b.semana-a.semana)[0];
+  spot.innerHTML = best && best.semana>0 ? `<h3>Destaque da semana</h3>
+      <p class="big">${esc(best.nome)}</p>
+      <p>Somou <b>${best.semana} pontos</b> nesta semana${best.prevRank && best.prevRank>best.rank ? ` e subiu para o ${best.rank}º lugar` : ""}.</p>`
+    : `<h3>Destaque da semana</h3><p>Ninguém pontuou nesta semana ainda. O primeiro comentário já vale 2 pontos.</p>`;
+
+  // áreas
+  const amax = areaList.length ? areaList[0].media || 1 : 1;
+  document.getElementById("areas").innerHTML = areaList.map(a=>`
+    <li><div class="row"><span>${esc(a.area)} <small>· ${a.n} ${a.n>1?"pessoas":"pessoa"}</small></span><b>${a.media.toFixed(1).replace(".",",")}</b></div>
+    <div class="bar"><i style="width:${a.media/amax*100}%"></i></div></li>`).join("") || '<li><small>As áreas aparecem com os primeiros pontos.</small></li>';
+
+  // regras
+  const P=CONFIG.pontos;
+  document.getElementById("rules").innerHTML = `
+    <dt>Curtir ou compartilhar</dt><dd>${P.curtida}</dd>
+    <dt>Comentar</dt><dd>${P.comentario}</dd>
+    <dt>Comentar no post do dia, 11h às 16h</dt><dd>+${CONFIG.bonusComentario}</dd>
+    <dt>Convite aceito</dt><dd>${P.convite}</dd>`;
+}
+
+/* ---------- início ---------- */
+(async function(){
+  const notice=document.getElementById("notice");
+  if(!CONFIG.csvLancamentos || !CONFIG.csvSeguidores){
+    const d=demoData(); render(compute(d.lanc,d.seg), true); return;
+  }
+  try{
+    const [lanc, seg] = await Promise.all([getCSV(CONFIG.csvLancamentos,"Lancamentos"), getCSV(CONFIG.csvSeguidores,"Seguidores")]);
+    render(compute(lanc, seg), false);
+  }catch(e){
+    notice.hidden=false;
+    notice.textContent=(e && e.aba ? e.message : "Não foi possível ler a planilha. Confira se as duas abas estão publicadas na web em formato CSV.") + " Enquanto isso, o site mostra os dados de exemplo.";
+    const d=demoData(); render(compute(d.lanc,d.seg), true);
+  }
+})();
+</script>
+<style>.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}</style>
+</body>
+</html>
