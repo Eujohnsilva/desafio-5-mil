@@ -314,15 +314,26 @@ function parseCSV(text){
     else if(c!=='\r') f+=c;
   }
   if(f!==""||row.length){ row.push(f); rows.push(row); }
-  const clean=rows.filter(r=>r.some(x=>x.trim()!==""));
+  let clean=rows.filter(r=>r.some(x=>x.trim()!==""));
   if(!clean.length) return [];
+  // Títulos digitados numa célula só ("data, colaborador, ..."): separa pela vírgula
+  if(clean[0].filter(x=>x.trim()!=="").length===1 && /[,;]/.test(clean[0][0])){
+    clean = clean.map(r => r.length===1 || r.slice(1).every(x=>x.trim()==="") ? r[0].split(/[,;]/) : r);
+  }
   const head=clean[0].map(norm);
   return clean.slice(1).map(r=>Object.fromEntries(head.map((h,i)=>[h,r[i]??""])));
 }
-async function getCSV(url){
-  const r = await fetch(url,{cache:"no-store"});
-  if(!r.ok) throw new Error("HTTP "+r.status);
-  return parseCSV(await r.text());
+async function getCSV(url, aba){
+  const fail = motivo => { const e=new Error(motivo); e.aba=aba; throw e; };
+  if(/\/edit|pubhtml/.test(url) || !/output=csv/.test(url))
+    fail(`O link da aba ${aba} não é o link de CSV. Em Arquivo › Compartilhar › Publicar na Web, escolha a aba ${aba} e o formato .csv, e use o link que termina em output=csv.`);
+  let r;
+  try{ r = await fetch(url,{cache:"no-store"}); }
+  catch(_){ fail(`O site não conseguiu abrir o link da aba ${aba}. Confira se a planilha está publicada na web e se o link foi copiado inteiro.`); }
+  if(!r.ok) fail(`O link da aba ${aba} respondeu com erro (${r.status}). Confira se a publicação na web continua ativa.`);
+  const text = await r.text();
+  if(/^\s*</.test(text)) fail(`O link da aba ${aba} devolveu uma página, não uma tabela. Publique a aba no formato .csv.`);
+  return parseCSV(text);
 }
 function actionOf(s){
   const a=norm(s);
@@ -486,11 +497,11 @@ function render(data, isDemo){
     const d=demoData(); render(compute(d.lanc,d.seg), true); return;
   }
   try{
-    const [lanc, seg] = await Promise.all([getCSV(CONFIG.csvLancamentos), getCSV(CONFIG.csvSeguidores)]);
+    const [lanc, seg] = await Promise.all([getCSV(CONFIG.csvLancamentos,"Lancamentos"), getCSV(CONFIG.csvSeguidores,"Seguidores")]);
     render(compute(lanc, seg), false);
   }catch(e){
     notice.hidden=false;
-    notice.textContent="Não foi possível ler a planilha. Confira se as duas abas estão publicadas na web em formato CSV e se os links no início do código estão corretos. Abaixo, os dados de exemplo.";
+    notice.textContent=(e && e.aba ? e.message : "Não foi possível ler a planilha. Confira se as duas abas estão publicadas na web em formato CSV.") + " Enquanto isso, o site mostra os dados de exemplo.";
     const d=demoData(); render(compute(d.lanc,d.seg), true);
   }
 })();
