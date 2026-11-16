@@ -251,7 +251,7 @@
     <section aria-labelledby="t-rank">
       <div class="head" style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap">
         <h2 id="t-rank">Ranking da equipe</h2>
-        <p style="color:var(--muted);font-size:15px">Atualizado no fim de cada dia útil. As setas comparam com a semana passada.</p>
+        <p style="color:var(--muted);font-size:15px">Atualizado todo dia às 10h, com os pontos do dia anterior. As setas comparam com a semana passada.</p>
       </div>
       <div id="board"></div>
     </section>
@@ -273,11 +273,11 @@
   <section class="section regras" aria-labelledby="t-regras">
     <div class="head"><h2 id="t-regras">Regras do desafio</h2><p>Dúvidas, fale com o Marketing.</p></div>
     <ol class="rule-list">
-      <li><h3>Quando vale</h3><p>De <b>16/11 a 04/12</b>, nos posts da página da MyTracking no LinkedIn.</p></li>
+      <li><h3>Quando vale</h3><p>De <b>16/11 a 04/12</b>. Só pontuam interações em posts publicados pela MyTracking nesse período. Posts anteriores a 16/11 não contam.</p></li>
       <li><h3>Como pontuar</h3><ul id="ruleList"></ul></li>
       <li><h3>Como comprovar</h3><p>Status e convites enviados valem com <b>print enviado no WhatsApp do Marketing</b>.</p></li>
       <li><h3>O que não pontua</h3><p>Comentário copiado, genérico ou só com emoji não pontua.</p></li>
-      <li><h3>Ranking</h3><p>O ranking é atualizado no <b>fim de cada dia útil</b>.</p></li>
+      <li><h3>Ranking</h3><p>O ranking geral é atualizado e divulgado <b>todo dia às 10h</b>, com os pontos do dia anterior.</p></li>
       <li><h3>Prêmios e empate</h3><p>Os <b>3 primeiros</b> do ranking ganham cartões-presente, entregues na confraternização de 05/12. Se houver empate no pódio, a decisão sai em um <b>quiz rápido</b> na própria confraternização.</p></li>
     </ol>
   </section>
@@ -387,6 +387,7 @@ async function getCSV(url, aba){
 function actionOf(s){
   const a=norm(s);
   if(a.includes("status")||a.includes("whats")) return "status";
+  if(a.includes("aceit")) return "aceito";            // regra antiga: não pontua mais
   if(a.includes("envi")||a.includes("convit")) return "enviados";
   if(a.includes("ideia")||a.includes("proprio")||a.includes("texto")) return "repostIdeias";
   if(a.includes("repost")||a.includes("compart")) return "repost";
@@ -399,10 +400,19 @@ const initials = n => n.split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).joi
 /* ---------- cálculo ---------- */
 function compute(lanc, seg){
   const ini = toDate(CONFIG.inicio);
-  const items = lanc.map(r=>({
+  const all = lanc.map(r=>({
     d: toDate(r.data), nome: String(r.colaborador??"").trim(), area: String(r.area??"").trim() || "Sem área",
-    acao: actionOf(r.acao), q: Math.max(0, num(r.quantidade) || 1)
-  })).filter(x=>x.d && x.nome && x.acao && (!ini || x.d>=ini));
+    acaoTxt: String(r.acao??"").trim(), acao: actionOf(r.acao), q: Math.max(0, num(r.quantidade) || 1)
+  })).filter(x=>x.nome || x.acaoTxt);
+  const skip = {semData:0, antes:0, acao:0, aceito:0, semNome:0, exemplos:new Set()};
+  const items = all.filter(x=>{
+    if(!x.nome){ skip.semNome++; return false; }
+    if(!x.d){ skip.semData++; return false; }
+    if(x.acao==="aceito"){ skip.aceito++; return false; }
+    if(!x.acao){ skip.acao++; if(x.acaoTxt) skip.exemplos.add(x.acaoTxt); return false; }
+    if(ini && x.d<ini){ skip.antes++; return false; }
+    return true;
+  });
 
   const last = items.reduce((m,x)=> x.d>m?x.d:m, new Date(0));
   const weekStart = items.length ? mondayOf(last) : null;
@@ -447,7 +457,7 @@ function compute(lanc, seg){
   const areaList=[...areas.values()].map(a=>({...a, media:a.soma/a.n})).sort((a,b)=>b.media-a.media);
 
   const upd = [last, atual.d].filter(Boolean).reduce((m,d)=> d>m?d:m, new Date(0));
-  return {list, areaList, atual, anterior, upd};
+  return {list, areaList, atual, anterior, upd, skip, lidos:all.length, colunas:Object.keys(lanc[0]||{})};
 }
 
 /* ---------- desenho ---------- */
@@ -458,7 +468,20 @@ const ACOES = () => {
           ["✉️",`Enviar ${conv[0]} convites para seguir a página`,conv[1]]];
 };
 function render(data, isDemo){
-  const {list, areaList, atual, anterior, upd} = data;
+  const {list, areaList, atual, anterior, upd, skip, lidos, colunas} = data;
+  // aviso para o Marketing quando alguma linha da planilha não entrou no ranking
+  if(!isDemo && skip){
+    const msg=[];
+    const falta=["data","colaborador","acao","quantidade"].filter(c=>colunas.length && !colunas.includes(c));
+    if(falta.length) msg.push(`a aba Lancamentos está sem a coluna ${falta.join(", ")} (confira os títulos da primeira linha)`);
+    if(skip.antes) msg.push(`${skip.antes} com data antes de ${CONFIG.inicio.slice(0,5)}, quando o desafio começa`);
+    if(skip.semData) msg.push(`${skip.semData} sem data ou com data em outro formato (use dd/mm/aaaa)`);
+    if(skip.acao) msg.push(`${skip.acao} com ação não reconhecida${skip.exemplos.size?` (${[...skip.exemplos].slice(0,3).map(esc).join(", ")})`:""}`);
+    if(skip.aceito) msg.push(`${skip.aceito} de "convite aceito", que não pontua mais`);
+    if(skip.semNome) msg.push(`${skip.semNome} sem o nome do colaborador`);
+    if(msg.length){ const n=document.getElementById("notice"); n.hidden=false;
+      n.innerHTML=`<b>Linhas da planilha que não entraram no ranking:</b> ${msg.join("; ")}.`; }
+  }
   const meta=CONFIG.meta, base=CONFIG.base;
   const falta=Math.max(0, meta-atual.v);
 
